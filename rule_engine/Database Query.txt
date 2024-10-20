@@ -1,0 +1,19 @@
+CREATE DATABASE rule_engine;
+
+USE rule_engine;
+
+-- Table to store rules in serialized form
+CREATE TABLE rules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rule_string TEXT NOT NULL,
+    ast TEXT NOT NULL
+);
+
+-- Table to store additional metadata
+CREATE TABLE metadata (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rule_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (rule_id) REFERENCES rules(id)
+);
