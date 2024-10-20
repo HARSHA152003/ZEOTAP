@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-8/2G4g1gTh7BfU2B9pr0gDZVfNLghWhHG0Y4PjO9ccm1giTGrLWBuwtnlLP1qlODPq8Al0hf0yGTs9tG5c43Cg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #ecf0f1;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .eval-result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .message {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #2ecc71; /* Green color for success messages */
+        }
+        .error {
+            color: #e74c3c; /* Red color for error messages */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rule Engine by Harshavardhan S</h1>
+
+        <h2>Create Rule</h2>
+        <form id="createRuleForm">
+            <label for="ruleString">Rule:</label>
+            <input type="text" id="ruleString" placeholder="Enter rule (e.g., (age > 30 AND department = 'Sales'))" required>
+            <button type="submit"><i class="fas fa-plus"></i> Create Rule</button>
+        </form>
+        <div class="message" id="createRuleMessage"></div> <!-- Message area for Create Rule -->
+
+        <h2>Available Rules</h2>
+        <ul id="rulesList"></ul>
+        
+        <h2>Combine Rules</h2>
+        <form id="combineRulesForm">
+            <label for="ruleIds">Rule IDs (comma separated):</label>
+            <input type="text" id="ruleIds" placeholder="e.g., 1, 2, 3" required>
+            <button type="submit"><i class="fas fa-link"></i> Combine Rules</button>
+        </form>
+        <div class="message" id="combineRulesMessage"></div> <!-- Message area for Combine Rules -->
+
+        <h2>Evaluate Rule</h2>
+        <form id="evaluateRuleForm">
+            <label for="evalRuleId">Rule ID:</label>
+            <input type="text" id="evalRuleId" placeholder="Enter rule ID" required>
+            <label for="evalData">Data (JSON):</label>
+            <input type="text" id="evalData" placeholder='e.g., {"age": 32, "department": "Sales", "salary": 60000}' required>
+            <button type="submit"><i class="fas fa-check"></i> Evaluate</button>
+        </form>
+        <div class="message" id="evaluateRuleMessage"></div> <!-- Message area for Evaluate Rule -->
+        <div class="eval-result" id="evalResult"></div>
+        <h2>Modify Rule</h2>
+        <form id="modifyRuleForm">
+            <label for="modifyRuleId">Rule ID:</label>
+            <input type="text" id="modifyRuleId" placeholder="Enter rule ID" required>
+            <label for="newRuleString">New Rule:</label>
+            <input type="text" id="newRuleString" placeholder="Enter new rule" required>
+            <button type="submit"><i class="fas fa-edit"></i> Modify Rule</button>
+        </form>
+        <div class="message" id="modifyRuleMessage"></div> <!-- Message area for Modify Rule -->
+
+        <div class="eval-result" id="evalResult"></div>
+    </div>
+
+    <script>
+        document.getElementById('createRuleForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let rule = document.getElementById('ruleString').value;
+            fetch('create_rule.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'rule=' + encodeURIComponent(rule)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage('createRuleMessage', data.message); // Show message in the Create Rule area
+                loadRules();
+                document.getElementById('createRuleForm').reset();
+            })
+            .catch(error => {
+                showMessage('createRuleMessage', 'Error creating rule: ' + error, true);
+            });
+        });
+
+        document.getElementById('combineRulesForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let ruleIds = document.getElementById('ruleIds').value.split(',').map(id => id.trim());
+            fetch('combine_rules.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'rule_ids=' + encodeURIComponent(JSON.stringify(ruleIds))
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage('combineRulesMessage', data.message); // Show message in the Combine Rules area
+                loadRules();
+                document.getElementById('combineRulesForm').reset();
+            })
+            .catch(error => {
+                showMessage('combineRulesMessage', 'Error combining rules: ' + error, true);
+            });
+        });
+
+        document.getElementById('evaluateRuleForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let ruleId = document.getElementById('evalRuleId').value;
+            let jsonData = document.getElementById('evalData').value;
+            fetch('evaluate_rule.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'rule_id=' + encodeURIComponent(ruleId) + '&json_data=' + encodeURIComponent(jsonData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the evalResult div with the evaluation result
+                let evalResultDiv = document.getElementById('evalResult');
+                evalResultDiv.innerHTML = `<strong>Evaluation Result:</strong> ${data.result}`;
+                showMessage('evaluateRuleMessage', 'Rule evaluated successfully.'); // Show message in the Evaluate Rule area
+            })
+            .catch(error => {
+                showMessage('evaluateRuleMessage', 'Error evaluating rule: ' + error, true);
+            });
+        });
+
+        document.getElementById('modifyRuleForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            let ruleId = document.getElementById('modifyRuleId').value;
+            let newRule = document.getElementById('newRuleString').value;
+            fetch('modify_rule.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'rule_id=' + encodeURIComponent(ruleId) + '&rule=' + encodeURIComponent(newRule)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage('modifyRuleMessage', data.message); // Show message in the Modify Rule area
+                loadRules();
+                document.getElementById('modifyRuleForm').reset();
+            })
+            .catch(error => {
+                showMessage('modifyRuleMessage', 'Error modifying rule: ' + error, true);
+            });
+        });
+
+        function loadRules() {
+            fetch('list_rules.php')
+            .then(response => response.json())
+            .then(data => {
+                let rulesList = document.getElementById('rulesList');
+                rulesList.innerHTML = '';
+                data.forEach(rule => {
+                    let li = document.createElement('li');
+                    li.textContent = 'ID: ' + rule.id + ', Rule: ' + rule.rule_string;
+                    rulesList.appendChild(li);
+                });
+            });
+        }
+
+        function showMessage(elementId, message, isError = false) {
+            const messageArea = document.getElementById(elementId);
+            messageArea.textContent = message;
+            messageArea.classList.remove('error');
+            if (isError) {
+                messageArea.classList.add('error');
+            }
+            setTimeout(() => {
+                messageArea.textContent = ''; // Clear message after 5 seconds
+            }, 5000);
+        }
+
+        loadRules();
+    </script>
+</body>
+</html>
